@@ -1,0 +1,70 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using CodeMonkey.Utils;
+
+public class WizardTower : MonoBehaviour
+{
+	private Vector3 projectileShootFromPosition;
+	private string enemyTag = "Enemy";
+	private float shootTimer;
+	private bool targetFound;
+	private GameObject nearestEnemy = null;
+	private GameObject towerParent;
+
+	public float shootTimerMax; //tower speed
+	public int damageAmount; //tower damage 
+	public float range; //tower ramge
+
+
+
+	private void Awake()
+	{
+		towerParent = GameObject.FindGameObjectWithTag("TowersParent");
+		gameObject.transform.SetParent(towerParent.transform);
+		projectileShootFromPosition = transform.Find("mageProjectileShootFromPosition").position; //start point for projectile
+		InvokeRepeating ("UpdateTarget", 0f, 0.5f); //search for closest target every 0.5 seconds rather than every frame
+	}
+
+	private void Update()
+	{
+		if (GameManagement.gameOver == true)
+			this.enabled = false;
+		shootTimer -= Time.deltaTime; 
+		if (shootTimer <= 0f) //shoots projectile when timer is 0
+		{
+			shootTimer = shootTimerMax;
+			if (targetFound == false)
+			{
+				return;
+			}
+			else
+			{
+				MageProjectile.Create(projectileShootFromPosition, nearestEnemy, damageAmount);
+			}
+		}
+
+	}
+
+	void UpdateTarget ()
+	{
+		GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+		float shortestDistance = Mathf.Infinity; //when no enemy found, infinity will not be in range
+		targetFound = false;
+		foreach(GameObject enemy in enemies)
+		{
+			float distanceToEnemy = Vector3.Distance (transform.position, enemy.transform.position);
+			Enemy enemy_ = enemy.GetComponent<Enemy>();
+			if (distanceToEnemy < shortestDistance && enemy_.getIsAir() == false)
+			{
+				shortestDistance = distanceToEnemy;
+				nearestEnemy = enemy; 
+			}
+			if (nearestEnemy != null && shortestDistance <= range)
+			{
+				targetFound = true;
+			}
+		}
+	}
+}
+
